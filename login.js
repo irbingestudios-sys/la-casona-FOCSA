@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 // 🧠 [LOG:LOGIN-002] Función principal de inicio de sesión
-export async function iniciarSesion() {
+async function iniciarSesion() {
   const correo = document.getElementById("correo").value.trim();
   const clave = document.getElementById("clave").value.trim();
   const mensaje = document.getElementById("mensaje-error");
@@ -89,6 +89,8 @@ export async function iniciarSesion() {
   } catch (err) {
     mensaje.textContent = "Error inesperado. Intenta nuevamente.";
     mensaje.style.display = "block";
+    document.getElementById("btn-login").addEventListener("click", iniciarSesion);
+
     console.error("[LOGIN-EXC] Error en iniciarSesion():", err);
   }
 }
