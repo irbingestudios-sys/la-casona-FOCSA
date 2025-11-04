@@ -101,6 +101,7 @@ function renderizarMenus(menus) {
     contenedor.innerHTML = "<p>⚠️ No hay menús disponibles con los filtros seleccionados.</p>";
     console.warn("[LOG:RENDER-WARN] Lista vacía tras renderizado");
     return;
+     }
   }
 
   const agrupados = agruparPorDestinoYCategoria(menus);
