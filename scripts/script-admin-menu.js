@@ -1,41 +1,40 @@
 // 🔗 [LOG:INIT-001] Conexión a Supabase
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const SUPABASE_URL = "https://qeqltwrkubtyrmgvgaai.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcWx0d3JrdWJ0eXJtZ3ZnYWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyMjY1MjMsImV4cCI6MjA3NzgwMjUyM30.Yfdjj6IT0KqZqOtDfWxytN4lsK2KOBhIAtFEfBaVRAw";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(
+  "https://qeqltwrkubtyrmgvgaai.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlcWx0d3JrdWJ0eXJtZ3ZnYWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyMjY1MjMsImV4cCI6MjA3NzgwMjUyM30.Yfdjj6IT0KqZqOtDfWxytN4lsK2KOBhIAtFEfBaVRAw"
+);
 
 // 🛡️ [LOG:SESSION-002] Validación de sesión y rol
-function verificarSesion(rolesPermitidos = []) {
+async function validarSesion() {
+  const uid = localStorage.getItem("uid");
   const usuario = localStorage.getItem("usuario");
   const rol = localStorage.getItem("rol");
-  const uid = localStorage.getItem("uid");
+  const sesion = localStorage.getItem("sesion_activa");
 
-  if (!usuario || !rol || !uid || !rolesPermitidos.includes(rol)) {
-    console.warn("[LOG:SESSION-ERR] Sesión inválida o rol no autorizado");
+  if (!uid || !usuario || !rol || sesion !== "true") {
+    console.warn("[SESION-ERR] Sesión inválida");
     window.location.href = "../index.html";
     return null;
   }
 
-  return { usuario, rol, uid };
+  const { data, error } = await supabase.rpc("verificar_sesion", { uid });
+  if (error || !data?.[0]?.autorizado || !["admin", "gerente"].includes(data[0].rol)) {
+    console.warn("[SESION-ERR] RPC deniega acceso");
+    window.location.href = "../index.html";
+    return null;
+  }
+
+  console.log(`[SESION-OK] Usuario: ${data[0].nombre} | Rol: ${data[0].rol}`);
+  return { uid, usuario: data[0].nombre, rol: data[0].rol };
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const sesion = verificarSesion(["admin", "gerente"]);
+  const sesion = await validarSesion();
   if (!sesion) return;
 
-  const { usuario, rol, uid } = sesion;
-  document.getElementById("admin-usuario").textContent = usuario;
-  console.log(`[LOG:SESSION-OK] Usuario: ${usuario} | Rol: ${rol}`);
-
-  const { data: permiso, error: rpcError } = await supabase.rpc("verificar_rol_admin", { uid });
-  if (rpcError || !permiso?.autorizado) {
-    console.warn(`[LOG:SESSION-ERR] RPC deniega acceso para UID: ${uid}`);
-    window.location.href = "../modules/selector.html";
-    return;
-  }
-
-  console.log(`[LOG:SESSION-OK] RPC confirma acceso para UID: ${uid}`);
+  document.getElementById("admin-usuario").textContent = sesion.usuario;
 
   await cargarFiltrosDinamicos();
   await cargarMenus();
@@ -44,59 +43,48 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("filtro-categoria")?.addEventListener("change", aplicarFiltros);
   document.getElementById("filtro-area")?.addEventListener("change", aplicarFiltros);
 });
-// 🔄 [LOG:FILTROS-003] Cargar filtros desde Supabase
+// 🔄 [LOG:FILTROS-003] Cargar filtros dinámicos desde Supabase
 async function cargarFiltrosDinamicos() {
   try {
-    const [destinos, areas, categorias] = await Promise.all([
-      supabase.rpc("obtener_destinos_enum"),
-      supabase.rpc("obtener_areas_unicas"),
-      supabase.rpc("obtener_categorias_unicas")
+    const [destinos, categorias, areas] = await Promise.all([
+      supabase.from("menus").select("destino").neq("destino", "").order("destino", { ascending: true }),
+      supabase.from("menus").select("categoria").neq("categoria", "").order("categoria", { ascending: true }),
+      supabase.from("menus").select("area").neq("area", "").order("area", { ascending: true })
     ]);
 
-    if (destinos.error || areas.error || categorias.error) {
-      console.error("[LOG:FILTROS-ERR]", destinos.error || areas.error || categorias.error);
-      return;
-    }
+    poblarSelect("filtro-destino", destinos.data.map(d => d.destino));
+    poblarSelect("filtro-categoria", categorias.data.map(c => c.categoria));
+    poblarSelect("filtro-area", areas.data.map(a => a.area));
 
-    poblarSelect("filtro-destino", destinos.data);
-    poblarSelect("filtro-area", areas.data);
-    poblarSelect("filtro-categoria", categorias.data);
-    poblarDatalist("lista-categorias", categorias.data);
-    poblarDatalist("lista-areas", areas.data);
-
-    console.log("[LOG:FILTROS-OK] Filtros cargados dinámicamente");
+    console.log("[LOG:FILTROS-OK] Filtros cargados correctamente");
   } catch (err) {
-    console.error("[LOG:FILTROS-EXC] Error en cargarFiltrosDinamicos():", err);
+    console.error("[LOG:FILTROS-ERR] Error en cargarFiltrosDinamicos():", err);
   }
 }
 
 function poblarSelect(id, valores) {
   const select = document.getElementById(id);
-  if (!select) return;
   select.innerHTML = `<option value="">Todos</option>`;
-  valores.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v.valor;
-    opt.textContent = v.valor;
-    select.appendChild(opt);
+  [...new Set(valores)].forEach(valor => {
+    if (valor) {
+      const option = document.createElement("option");
+      option.value = valor;
+      option.textContent = valor;
+      select.appendChild(option);
+    }
   });
 }
 
-function poblarDatalist(id, valores) {
-  const lista = document.getElementById(id);
-  if (!lista) return;
-  lista.innerHTML = "";
-  valores.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v.valor;
-    lista.appendChild(opt);
-  });
-}
-
-// 📦 [LOG:MENUS-005] Cargar todos los menús
+// 📦 [LOG:MENUS-004] Cargar todos los menús
 async function cargarMenus() {
   try {
-    const { data, error } = await supabase.rpc("listar_menus_admin");
+    const { data, error } = await supabase.rpc("filtrar_menus_admin_v2", {
+      p_destino: null,
+      p_categoria: null,
+      p_area: null,
+      p_ordenar_por_stock: false
+    });
+
     if (error) throw error;
     console.log(`[LOG:MENUS-OK] ${data.length} menús cargados`);
     renderizarMenus(data);
@@ -104,7 +92,7 @@ async function cargarMenus() {
     console.error("[LOG:MENUS-ERR] Error en cargarMenus():", err);
   }
 }
-// 🎨 [LOG:RENDER-006] Renderizar menús agrupados
+// 🎨 [LOG:RENDER-005] Renderizar menús agrupados
 function renderizarMenus(menus) {
   const contenedor = document.getElementById("contenedor-menus");
   contenedor.innerHTML = "";
@@ -159,7 +147,7 @@ function renderizarMenus(menus) {
   console.log("[LOG:RENDER-OK] Menús renderizados correctamente");
 }
 
-// 🧩 [LOG:RENDER-007] Agrupar por destino y categoría
+// 🧩 [LOG:RENDER-006] Agrupar por destino y categoría
 function agruparPorDestinoYCategoria(menus) {
   const resultado = {};
   menus.forEach(menu => {
@@ -172,7 +160,7 @@ function agruparPorDestinoYCategoria(menus) {
   return resultado;
 }
 
-// 🔍 [LOG:FILTROS-008] Aplicar filtros seleccionados
+// 🔍 [LOG:FILTROS-007] Aplicar filtros activos
 async function aplicarFiltros() {
   try {
     const destino = document.getElementById("filtro-destino").value || null;
@@ -194,7 +182,7 @@ async function aplicarFiltros() {
   }
 }
 
-// 📝 [LOG:CREAR-009] Crear nuevo menú
+// 📝 [LOG:CREAR-008] Crear nuevo menú
 async function crearMenu() {
   try {
     const nombre = document.getElementById("crear-nombre").value.trim();
@@ -240,7 +228,7 @@ async function crearMenu() {
     console.error("[LOG:CREAR-ERR] Error en crearMenu():", err);
   }
 }
-// ✅ [LOG:DISPONIBLE-010] Marcar menú como disponible/no disponible
+// ✅ [LOG:DISPONIBLE-009] Marcar menú como disponible/no disponible
 async function marcarDisponible(id, disponible) {
   try {
     const { error } = await supabase.rpc("actualizar_disponibilidad_menu", {
@@ -255,7 +243,7 @@ async function marcarDisponible(id, disponible) {
   }
 }
 
-// 🗑️ [LOG:ELIMINAR-011] Eliminar menú por ID
+// 🗑️ [LOG:ELIMINAR-010] Eliminar menú por ID
 async function eliminarMenu(id) {
   if (!confirm("¿Eliminar este menú? Esta acción no se puede deshacer.")) return;
   try {
@@ -269,7 +257,7 @@ async function eliminarMenu(id) {
   }
 }
 
-// 📥 [LOG:IMPORTAR-012] Importar menús desde JSON
+// 📥 [LOG:IMPORTAR-011] Importar menús desde JSON
 async function importarMenus() {
   try {
     const texto = document.getElementById("json-importar").value.trim();
@@ -286,7 +274,7 @@ async function importarMenus() {
   }
 }
 
-// 📤 [LOG:EXPORTAR-013] Exportar menús como CSV
+// 📤 [LOG:EXPORTAR-012] Exportar menús como CSV
 async function exportarMenus() {
   try {
     const destino = document.getElementById("filtro-destino").value || null;
@@ -325,7 +313,7 @@ function descargarCSV(contenido, nombreArchivo) {
   document.body.removeChild(link);
 }
 
-// 📊 [LOG:STOCK-014] Actualizar stock masivo
+// 📊 [LOG:STOCK-013] Actualizar stock masivo
 async function guardarStockActualizado() {
   try {
     const inputs = document.querySelectorAll("#lista-stock-editable input[data-id]");
@@ -348,7 +336,7 @@ async function guardarStockActualizado() {
   }
 }
 
-// 🧾 [LOG:AUDITORIA-015] Registrar acción administrativa
+// 🧾 [LOG:AUDITORIA-014] Registrar acción administrativa
 async function registrarAuditoria(accion, detalle) {
   try {
     const usuario = localStorage.getItem("usuario");
@@ -363,7 +351,7 @@ async function registrarAuditoria(accion, detalle) {
   }
 }
 
-// 🧼 [LOG:UI-016] Controles visuales
+// 🧼 [LOG:UI-015] Controles visuales
 function abrirFormularioCrear() {
   document.getElementById("formulario-crear").style.display = "block";
 }
