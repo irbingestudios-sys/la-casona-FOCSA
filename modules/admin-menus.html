@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Menús | La Casona de 17</title>
+  <link rel="stylesheet" href="../style-base.css" />
+  <link rel="icon" href="../assets/favicon.ico" type="image/x-icon" />
+</head>
+<body>
+  <div class="contenedor">
+    <header>
+      <img src="../assets/logo.png" alt="Logo La Casona de 17" />
+      <h1>Gestión de Menús</h1>
+      <p>Panel administrativo para crear, editar y controlar disponibilidad</p>
+      <button onclick="cerrarPanelAdminMenus()">Cerrar módulo</button>
+    </header>
+
+    <!-- Filtros -->
+    <section class="filtros">
+      <h3>🔍 Filtros dinámicos</h3>
+      <div class="grupo-filtros">
+        <label for="filtro-destino">Destino:</label>
+        <select id="filtro-destino"></select>
+
+        <label for="filtro-categoria">Categoría:</label>
+        <select id="filtro-categoria"></select>
+
+        <label for="filtro-area">Área:</label>
+        <select id="filtro-area"></select>
+      </div>
+    </section>
+
+    <!-- Contenedor de menús -->
+    <section>
+      <h3>📦 Menús disponibles</h3>
+      <div id="contenedor-menus"></div>
+    </section>
+
+    <!-- Crear nuevo menú -->
+    <section>
+      <h3>📝 Crear nuevo menú</h3>
+      <div id="formulario-crear" style="display:none;">
+        <input type="text" id="crear-nombre" placeholder="Nombre del menú" />
+        <input type="number" id="crear-precio" placeholder="Precio" />
+        <input type="number" id="crear-stock" placeholder="Stock" />
+        <input type="text" id="crear-categoria" placeholder="Categoría" list="lista-categorias" />
+        <input type="text" id="crear-area" placeholder="Área" list="lista-areas" />
+        <input type="text" id="crear-destino" placeholder="Destino" />
+        <input type="number" id="crear-orden" placeholder="Orden visual" />
+        <input type="text" id="crear-imagen" placeholder="URL de imagen" />
+        <textarea id="crear-descripcion" placeholder="Descripción"></textarea>
+        <label><input type="checkbox" id="crear-disponible" checked /> Disponible</label>
+        <label><input type="checkbox" id="crear-activo" checked /> Activo</label>
+        <button onclick="crearMenu()">Crear menú</button>
+        <button onclick="cerrarFormularioCrear()">Cancelar</button>
+      </div>
+      <button onclick="abrirFormularioCrear()">➕ Nuevo menú</button>
+    </section>
+
+    <!-- Panel de stock -->
+    <section>
+      <h3>📊 Actualizar stock</h3>
+      <div id="panel-actualizar-stock" style="display:none;">
+        <div id="lista-stock-editable"></div>
+        <button onclick="guardarStockActualizado()">Guardar cambios</button>
+        <button onclick="cerrarPanelActualizarStock()">Cancelar</button>
+      </div>
+      <button onclick="abrirPanelActualizarStock()">🛠️ Editar stock</button>
+    </section>
+
+    <!-- Importar / Exportar -->
+    <section>
+      <h3>📥 Importar / 📤 Exportar</h3>
+      <div id="panel-importar" style="display:none;">
+        <textarea id="json-importar" placeholder="Pega aquí el JSON de menús"></textarea>
+        <button onclick="importarMenus()">Importar</button>
+        <button onclick="cerrarImportador()">Cancelar</button>
+      </div>
+      <button onclick="abrirImportador()">📥 Importar JSON</button>
+      <button onclick="exportarMenus()">📤 Exportar CSV</button>
+    </section>
+  </div>
+
+  <!-- Datalists para autocompletado -->
+  <datalist id="lista-categorias"></datalist>
+  <datalist id="lista-areas"></datalist>
+
+  <!-- Script principal -->
+  <script type="module" src="../scripts/script-admin.js"></script>
+</body>
+</html>
