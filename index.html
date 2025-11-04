@@ -1,1 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso | La Casona de 17</title>
+  <link rel="stylesheet" href="./style-base.css" />
+  <link rel="icon" href="./assets/favicon.ico" />
+</head>
+<body>
+  <div class="contenedor centrado">
+    <header>
+      <img src="./assets/logo.png" alt="Logo La Casona de 17" />
+      <h1>Bienvenido</h1>
+      <p>Accede a tu panel según tu rol</p>
+    </header>
 
+    <section class="formulario-login">
+      <input type="email" id="correo" placeholder="Correo electrónico" autocomplete="username" />
+      <input type="password" id="clave" placeholder="Contraseña" autocomplete="current-password" />
+      <button onclick="iniciarSesion()">Iniciar sesión</button>
+      <p id="mensaje-error" class="error" style="display:none;"></p>
+    </section>
+  </div>
+
+  <script type="module" src="./scripts/login.js"></script>
+</body>
+</html>
