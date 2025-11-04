@@ -25,17 +25,19 @@ async function iniciarSesion() {
   }
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: correo,
-      password: clave
-    });
+  const { data, error } = await supabase.rpc("autenticar_usuario", {
+  p_usuario: usuario,
+  p_clave: clave
+});
 
-    if (error || !data?.user) {
-      mensaje.textContent = "Credenciales incorrectas.";
-      mensaje.style.display = "block";
-      console.warn("[LOGIN-ERR] Fallo de autenticación:", error?.message);
-      return;
-    }
+if (error || !data?.[0]) {
+  mensaje.textContent = "Usuario o clave incorrectos.";
+  mensaje.style.display = "block";
+  console.warn("[LOGIN-ERR] Fallo de autenticación:", error?.message);
+  return;
+}
+
+const perfil = data[0];
 
     const { user } = data;
     const uid = user.id;
@@ -62,12 +64,10 @@ async function iniciarSesion() {
     }
 
     // 💾 Guardar sesión local
-    localStorage.setItem("uid", uid);
-    localStorage.setItem("usuario", perfil.nombre || correo);
-    localStorage.setItem("rol", perfil.rol);
-    localStorage.setItem("correo", correo);
-    localStorage.setItem("token", token);
-    localStorage.setItem("sesion_activa", "true");
+localStorage.setItem("uid", perfil.id);
+localStorage.setItem("usuario", perfil.nombre);
+localStorage.setItem("rol", perfil.rol);
+localStorage.setItem("sesion_activa", "true");
 
     console.log(`[LOGIN-OK] Usuario autenticado: ${perfil.nombre} (${perfil.rol})`);
 
