@@ -14,7 +14,7 @@ document.getElementById("btn-login").addEventListener("click", iniciarSesion);
 
 // 🔐 [LOG:LOGIN-003] Función principal de inicio de sesión
 async function iniciarSesion() {
-  const usuario = document.getElementById("correo").value.trim();
+  const usuario = document.getElementById("usuario").value.trim();
   const clave = document.getElementById("clave").value.trim();
   const mensaje = document.getElementById("mensaje-error");
 
