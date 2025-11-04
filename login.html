@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login FOCSA</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="/scripts/supabase.js"></script>
+  <script src="/scripts/auth.js" defer></script>
+</head>
+<body>
+  <h2>Acceso Clientes FOCSA</h2>
+  <form id="login-form">
+    <input type="text" id="usuario" placeholder="Usuario" required />
+    <input type="password" id="clave" placeholder="Contraseña" required />
+    <button type="submit">Ingresar</button>
+  </form>
+  <div id="error-msg"></div>
+</body>
+</html>
